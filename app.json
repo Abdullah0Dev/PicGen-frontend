@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "userInterfaceStyle": "automatic",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "icon": "./src/assets/images/icon.png",
+    "web": {
+      "output": "static",
+      "bundler": "metro",
+      "favicon": "./src/assets/images/favicon.png"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abdullahdev.PicGen"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.abdullahdev.PicGen",
+      "versionCode": 1,
+      "splash": {
+        "image": "./src/assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://n"
+        }
+      ]
+    ],
+    "name": "PicGen",
+    "slug": "PicGen",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "8b7de7d8-4d25-48f4-824e-9297a80c683a"
+      }
+    }
+  }
+}

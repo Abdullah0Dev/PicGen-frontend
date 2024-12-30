@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,37 +12,29 @@ import { CustomButton, InputField } from "@/components";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import Toast from "react-native-toast-message";
 import Collapsible from "react-native-collapsible";
+import { APIKeyContext } from "@/context/APIKeyContext";
 // Use imperatively to set the initial theme (optional)
 colorScheme.set("light");
 
 const Setting = () => {
   const { colorScheme: currentScheme, setColorScheme } = useColorScheme();
-  const [APIKey, setAPIKey] = useState("");
+  // const [APIKey, setAPIKey] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const toggleTheme = () => {
     setColorScheme(currentScheme === "light" ? "dark" : "light");
   };
+
+  const { APIKey, saveAPIKey } = useContext(APIKeyContext);
+  const [localAPIKey, setLocalAPIKey] = useState(APIKey);
+
   // Load API Key from AsyncStorage when the component is mounted
   useEffect(() => {
-    const loadAPIKey = async () => {
-      try {
-        const storedAPIKey = await AsyncStorage.getItem("APIKey");
-        if (storedAPIKey) {
-          setAPIKey(storedAPIKey); // Set the API key to the state if found
-        }
-      } catch (error) {
-        console.error("Failed to load the API Key from AsyncStorage:", error);
-      }
-    };
-
-    loadAPIKey();
-
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
       () => {
         setIsKeyboardVisible(true);
-        setIsCollapsed(true)
+        setIsCollapsed(true);
       }
     );
     const keyboardDidHideListener = Keyboard.addListener(
@@ -58,30 +50,24 @@ const Setting = () => {
     };
   }, []);
 
-  // Save API Key to AsyncStorage when Save button is pressed
-  const saveAPIKey = async () => {
-    // await AsyncStorage.removeItem("APIKey");
-    if (APIKey && APIKey.startsWith("sk-")) {
-      try {
-        await AsyncStorage.setItem("APIKey", APIKey);
-        Toast.show({
-          type: "success",
-          text1: "Success!",
-          text2: "API Key saved successfully 🎉",
-        });
-        console.log("API Key saved successfully");
-      } catch (error) {
-        console.error("Failed to save the API Key:", error);
-      }
+  const handleSave = () => {
+    if (localAPIKey.startsWith("sk-")) {
+      saveAPIKey(localAPIKey);
+      console.log("API KEY->:", APIKey);
+      
+      Toast.show({
+        type: "success",
+        text1: "Success!",
+        text2: "API Key saved successfully 🎉",
+      });
     } else {
       Toast.show({
         type: "error",
-        text1: "Invalid API Key!",  
+        text1: "Invalid API Key!",
         text2: "The API Key must start with 'sk-' ❌",
       });
     }
   };
-
   return (
     <View className="flex-1 h-full flex p-4 bg-white dark:bg-gray-900">
       <Text className="text-3xl font-bold text-center pt-9 text-black dark:text-white">
@@ -105,8 +91,8 @@ const Setting = () => {
           API Key
         </Text>
         <InputField
-          value={APIKey}
-          onChangeText={(key) => setAPIKey(key)}
+          value={localAPIKey}
+          onChangeText={setLocalAPIKey}
           placeholder="sk-eif**************bqz"
         />
       </View>
@@ -114,7 +100,7 @@ const Setting = () => {
         containerClassName={`absolute self-center ${
           isKeyboardVisible ? "bottom-16" : "bottom-32"
         }`}
-        onPress={saveAPIKey}
+        onPress={handleSave}
         title="Save"
       />
       {/* how to get the API KEY */}

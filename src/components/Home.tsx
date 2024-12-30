@@ -8,7 +8,7 @@ import {
   Image,
   FlatList,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Entypo from "react-native-vector-icons/Entypo";
@@ -25,6 +25,9 @@ import { router } from "expo-router";
 import { PostData } from "@/app/[id]";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ReactNativeModal from "react-native-modal";
+import LottieView from "lottie-react-native";
+import { APIKeyContext } from "@/context/APIKeyContext";
 const HomeScreen = () => {
   const [text, setText] = useState("");
   const [navigatePrompt, setNavigatePrompt] = useState("bad quality");
@@ -32,6 +35,7 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(false);
   const [textLength, setTextLength] = useState(0);
   const [selectedRatio, setSelectedRatio] = useState(AspectRationData[0].ratio);
+  const { APIKey } = useContext(APIKeyContext);
   const height = useSharedValue(0); // Animation value for height
   const opacity = useSharedValue(0); // Animation value for opacity
   const [model, setModel] = useState<ModelType[]>([
@@ -51,7 +55,7 @@ const HomeScreen = () => {
         "https://emudhra.com/hubfs/Imported_Blog_Media/Z9zIzio7SX3Ys9vlfCnh.webp",
     },
   ]);
-  const [User_API_KEY, setUser_API_KEY] = useState("");
+
   const [selectedModel, setSelectedModel] = useState(model[0]);
 
   const rotation = useSharedValue(0); // Initial rotation value
@@ -66,23 +70,6 @@ const HomeScreen = () => {
   const handleNegativePromptChange = (input: string) => {
     setNavigatePrompt(input);
   };
-
-  useEffect(() => {
-    const loadAPIKey = async () => {
-      try {
-        const storedAPIKey = await AsyncStorage.getItem("APIKey");
-        if (storedAPIKey) {
-          setUser_API_KEY(storedAPIKey); // Set the API key to the state if found
-        }
-        console.log("API KEY:", User_API_KEY);
-        
-      } catch (error) {
-        console.error("Failed to load the API Key from AsyncStorage:", error);
-      }
-    };
-
-    loadAPIKey();
-  }, []);
 
   const handleResetChange = () => {
     setText("");
@@ -111,11 +98,12 @@ const HomeScreen = () => {
   };
   // handleGenerate
   const handleGenerate = async () => {
+    console.log("API KEY:", APIKey);
     // create a request to the backend...
     setLoading(true);
-    try {  
+    try {
       const response = await fetch(
-        "https://picgen-pro-maker.onrender.com/api/generate-image",
+        "https://picgen-api.devmindslab.com:8445/api/generate-image",
         {
           // replace it with 10.0.2.2
           method: "POST",
@@ -128,7 +116,7 @@ const HomeScreen = () => {
             prompt: text,
             negative_prompt: navigatePrompt,
             aspect_ratio: selectedRatio,
-            api_key: User_API_KEY,
+            api_key: APIKey,
           }),
         }
       );
@@ -185,9 +173,9 @@ const HomeScreen = () => {
       });
     } finally {
       setLoading(false);
-      // setText("");
-      // setTextLength(0);
-      // setNavigatePrompt("");
+      setText("");
+      setTextLength(0);
+      setNavigatePrompt("");
     }
   };
   const handleGenerateTest = async () => {
@@ -205,7 +193,7 @@ const HomeScreen = () => {
     const isExpanding = !showNegativePromptField;
     setShowNegativePromptField(isExpanding);
 
-    const animationDuration = isExpanding ? 300 : 500;
+    const animationDuration = isExpanding ? 500 : 900;
 
     height.value = withTiming(isExpanding ? 200 : 0, {
       duration: animationDuration,
@@ -323,22 +311,22 @@ const HomeScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
-        {showNegativePromptField && (
-          <Animated.View
-            style={animatedPromptStyle}
-            className="bg-white shadow-xl px-3 mx-5 right-1"
-          >
-            <TextInput
-              placeholder="bad quality...."
-              placeholderTextColor={"#ADADAD"}
-              multiline={true}
-              style={{ textAlignVertical: "top" }}
-              className="text-lg font-regular rounded-lg flex-wrap text-black/90 w-full min-h-52"
-              value={navigatePrompt}
-              onChangeText={handleNegativePromptChange}
-            />
-          </Animated.View>
-        )}
+        {/* {showNegativePromptField && ( */}
+        <Animated.View
+          style={animatedPromptStyle}
+          className="bg-white shadow-xl mt-3 px-3 mx-5 right-1"
+        >
+          <TextInput
+            placeholder="bad quality...."
+            placeholderTextColor={"#ADADAD"}
+            multiline={true}
+            style={{ textAlignVertical: "top" }}
+            className="text-lg font-regular rounded-lg flex-wrap text-black/90 w-full min-h-52"
+            value={navigatePrompt}
+            onChangeText={handleNegativePromptChange}
+          />
+        </Animated.View>
+        {/* )} */}
       </View>
       {/* select MOdels */}
       <View className="my-5 rounded-xl bg-white drop-shadow-md shadow-xl pt-3 pb-5 px-4">
@@ -416,6 +404,24 @@ const HomeScreen = () => {
           ))}
         </View>
       </View>
+      <ReactNativeModal isVisible={loading}>
+        <View className="bg-white mx-5 rounded-3xl h-80 flex justify-center items-center">
+          {/* <LoadingDots size={35} /> */}
+          {/* <ActivityIndicator size={"large"} /> */}
+          <LottieView
+            autoPlay
+            style={{
+              width: 300,
+              height: 300,
+            }}
+            // Find more Lottie files at https://lottiefiles.com/featured
+            source={{
+              uri: `https://lottie.host/fda911a6-d5cd-4daa-8720-7e74d87d5d81/v9hWZf3bGQ.lottie`,
+            }}
+          />
+          <Text className="text-xl absolute bottom-5">Generating Image...</Text>
+        </View>
+      </ReactNativeModal>
       {/* generate btn */}
       <View className=" pb-24">
         <CustomButton

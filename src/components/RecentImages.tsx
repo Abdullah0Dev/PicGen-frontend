@@ -15,7 +15,11 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import * as Clipboard from "expo-clipboard";
+
 import { router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
@@ -34,6 +38,50 @@ function Photo({
   index: number;
   scrollX: SharedValue<number>;
 }) {
+  const isPressed = useSharedValue(false);
+  const showPrompt = useSharedValue(false);
+  const positionX = useSharedValue(0);
+  const positionY = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const togglePrompt = () => {
+    showPrompt.value = !showPrompt.value;
+  };
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      position: isPressed.value ? "absolute" : "relative",
+      top: isPressed.value ? positionY.value : 0,
+      left: isPressed.value ? positionX.value : 0,
+      transform: [{ scale: scale.value }],
+      zIndex: isPressed.value ? 100 : 0,
+    };
+  });
+  const promptStyle = useAnimatedStyle(() => {
+    return {
+      opacity: showPrompt.value ? 1 : 0, // Show or hide the prompt
+      transform: [
+        {
+          translateY: showPrompt.value ? 0 : 20, // Slide effect
+        },
+      ],
+    };
+  });
+  const longPressGesture = Gesture.LongPress()
+    .onStart(() => {
+      // showPrompt.value = !showPrompt.value;
+      isPressed.value = true;
+      positionX.value = 0;
+      positionY.value = 0;
+      scale.value = withSpring(1.5, { damping: 20 });
+    })
+    .onEnd(() => {
+      // showPrompt.value = !showPrompt.value;
+      isPressed.value = false;
+      scale.value = withSpring(1, { damping: 20 });
+    });
+  const handleCopyPrompt = async (prompt: string) => {
+    await Clipboard.setStringAsync(prompt);
+  };
+
   const stylez = useAnimatedStyle(() => {
     return {
       transform: [
@@ -57,67 +105,50 @@ function Photo({
       ],
     };
   });
-  const prompt = `A beautiful field of colorful flowers in full bloom, with vibrant  colors and a clear sky`;
-  console.log("prompt:", item.prompt);
-
+  const AnimatedTouchableOpacity =
+    Animated.createAnimatedComponent(TouchableOpacity);
   return (
-    <Animated.View
-      style={{
-        width: _imageWidth,
-        height: _imageHeight,
-        overflow: "hidden",
-        borderRadius: 18,
-      }}
-    >
-      <Animated.Image
-        source={{ uri: item.url }}
-        style={[{ flex: 1 }, stylez]}
-      />
-      <View className="absolute bottom-0 pb-3 w-full bg-black/30 px-3">
-        <Text className="  text-3xl font-JakartaMedium text-white  ">
-          {item.prompt.length >= 120
-            ? item.prompt.slice(0, 120) + "..."
-            : item.prompt}
-          {/* {prompt} */}
-        </Text>
-      </View>
-    </Animated.View>
+    <GestureDetector gesture={longPressGesture}>
+      <AnimatedTouchableOpacity
+        onPress={togglePrompt}
+        style={[
+          {
+            width: _imageWidth,
+            height: _imageHeight,
+            overflow: "hidden",
+            borderRadius: 18,
+          },
+          // animatedStyle,
+        ]}
+      >
+        <Animated.Image
+          source={{ uri: item.url }}
+          style={[{ flex: 1 }, stylez]}
+        />
+        <TouchableOpacity
+          className="absolute top-3 right-3 rounded-full  bg-black/30 p-3"
+          onPress={() => handleCopyPrompt(item.prompt)}
+        >
+          <MaterialIcons name={"copy-all"} size={20} color="white" />
+        </TouchableOpacity>
+        <Animated.View
+          style={promptStyle}
+          className="absolute bottom-0 pb-3 w-full bg-black/30 px-3"
+        >
+          <Text className="  text-3xl font-JakartaMedium text-white  ">
+            {item.prompt.length >= 120
+              ? item.prompt.slice(0, 120) + "..."
+              : item.prompt}
+            {/* {prompt} */}
+          </Text>
+        </Animated.View>
+      </AnimatedTouchableOpacity>
+    </GestureDetector>
   );
 }
 
 // get scrollX
 
-interface imageDataProps {
-  url: string;
-  id: number;
-}
-
-const imageData: imageDataProps[] = [
-  {
-    url: "https://images.pexels.com/photos/29551243/pexels-photo-29551243/free-photo-of-monochrome-ferris-wheel-in-gothenburg-park.jpeg",
-    id: 1,
-  },
-  {
-    url: "https://images.pexels.com/photos/22698026/pexels-photo-22698026/free-photo-of-wind-turbines-on-mountains-with-winding-roads.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-    id: 2,
-  },
-  {
-    url: "https://images.pexels.com/photos/29551243/pexels-photo-29551243/free-photo-of-monochrome-ferris-wheel-in-gothenburg-park.jpeg",
-    id: 3,
-  },
-  {
-    url: "https://images.pexels.com/photos/22698026/pexels-photo-22698026/free-photo-of-wind-turbines-on-mountains-with-winding-roads.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-    id: 4,
-  },
-  {
-    url: "https://images.pexels.com/photos/29551243/pexels-photo-29551243/free-photo-of-monochrome-ferris-wheel-in-gothenburg-park.jpeg",
-    id: 5,
-  },
-  {
-    url: "https://images.pexels.com/photos/22698026/pexels-photo-22698026/free-photo-of-wind-turbines-on-mountains-with-winding-roads.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-    id: 6,
-  },
-];
 function BackdropPhoto({
   photo,
   index,
@@ -163,7 +194,7 @@ const RecentImages = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://picgen-pro-maker.onrender.com/api/recent-images`
+          `https://picgen-api.devmindslab.com:8445/api/recent-images`
         );
         // console.log(response);
 
@@ -233,7 +264,7 @@ const RecentImages = () => {
           snapToInterval={_imageWidth + _spacing}
           onScroll={onScroll}
           scrollEventThrottle={1000 / 60} // 16 ms
-        />   
+        />
       )}
       <Toast />
     </View>

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  Dimensions,
 } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
@@ -70,6 +71,8 @@ const HomeScreen = () => {
   const handleNegativePromptChange = (input: string) => {
     setNavigatePrompt(input);
   };
+  const { width } = Dimensions.get("window");
+  const phone_height = Dimensions.get("window").height;
 
   const handleResetChange = () => {
     setText("");
@@ -404,10 +407,15 @@ const HomeScreen = () => {
           ))}
         </View>
       </View>
-      <ReactNativeModal isVisible={loading}>
-        <View className="bg-white mx-5 rounded-3xl h-80 flex justify-center items-center">
-          {/* <LoadingDots size={35} /> */}
-          {/* <ActivityIndicator size={"large"} /> */}
+      <ReactNativeModal
+        isVisible={loading}
+        style={{
+          position: "absolute",
+          top: phone_height * 0.32,
+          marginLeft: width * 0.13,
+        }}  
+      >
+        <View className="bg-white   rounded-3xl h-80 flex justify-center items-center">
           <LottieView
             autoPlay
             style={{

@@ -33,10 +33,11 @@ const CustomButton: React.FC<CustomButtonType> = ({
     >
       <LinearGradient
         colors={[startColor, endColor]}
-        className=" py-4 px-4 items-center justify-center"
-        style={{ borderRadius: 60 }}
+        // className=" py-4 px-4 items-center justify-center"
+        
+        style={{ borderRadius: 60, paddingHorizontal: 20, paddingVertical: 15, alignContent: 'center' }}
       >
-        <Text className={textClassName}>
+        <Text className={textClassName} style={{textAlign: "center"}}>
           {" "}
           {loading ? "Generating.." : title}
         </Text>
